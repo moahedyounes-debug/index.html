@@ -25,7 +25,7 @@
         <h2 style="border:none; margin:0;">رغوة الهجين</h2>
         <p>استعلم عن بطاقة العضوية برقم الجوال</p>
         <input type="tel" id="phoneInput" placeholder="05xxxxxxxx">
-        <div id="loader">جاري جلب بيانات العميل...</div>
+        <div id="loader">جاري البحث في قاعدة البيانات...</div>
         <button id="searchBtn" onclick="fetchData()">استعراض البطاقة</button>
     </div>
 
@@ -41,49 +41,42 @@
     </div>
 
     <script>
+        // دالة جلب البيانات باستخدام JSONP لتخطي حظر الحماية
         function fetchData() {
             const phone = document.getElementById('phoneInput').value.trim();
-            // الرابط الأحدث الذي أرسلته
-            const url = 'https://script.google.com/macros/s/AKfycbzTJAuu_V57ys9nozyKUtipXz2r5GIxEbwLCr-hg7S2BxJZelwbYqVoY-WvKBXN2iv7/exec';
+            const url = 'https://script.google.com/macros/s/AKfycbzndVlQeJFtce3GmMtQxnfm2IHiGo5cxHdHOeDrUWgeSnvCqAgaevQWPdrftR3Pd8WO/exec';
             
             if(!phone) return alert("يرجى إدخال رقم الجوال");
 
-            const loader = document.getElementById('loader');
-            const card = document.getElementById('loyaltyCard');
-            const btn = document.getElementById('searchBtn');
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('loyaltyCard').style.display = 'none';
 
-            loader.style.display = 'block';
-            card.style.display = 'none';
-            btn.disabled = true;
+            // حذف أي طلب قديم إذا وجد
+            const oldScript = document.getElementById('jsonp-request');
+            if (oldScript) oldScript.remove();
 
-            fetch(`${url}?phone=${phone}`, {
-                method: 'GET',
-                mode: 'cors',
-                redirect: 'follow'
-            })
-            .then(response => response.json())
-            .then(data => {
-                loader.style.display = 'none';
-                btn.disabled = false;
-                
-                if(data.error) {
-                    alert(data.error);
-                } else {
-                    document.getElementById('name').innerText = data.name || "غير مسجل";
-                    document.getElementById('mId').innerText = data.membershipId || "--";
-                    document.getElementById('car').innerText = (data.carName || "") + " (" + (data.plate || "") + ")";
-                    document.getElementById('date').innerText = data.lastVisit || "لا يوجد";
-                    document.getElementById('visits').innerText = data.visits || "0";
-                    document.getElementById('level').innerText = data.level || "عادي";
-                    card.style.display = 'block';
-                }
-            })
-            .catch(e => {
-                loader.style.display = 'none';
-                btn.disabled = false;
-                console.error(e);
-                alert("خطأ فني: تأكد من أن السكربت في جوجل منشور كـ 'Anyone'.");
-            });
+            // إنشاء طلب جديد يتجاوز قيود المتصفح
+            const script = document.createElement('script');
+            script.id = 'jsonp-request';
+            script.src = `${url}?phone=${phone}&callback=handleResponse`;
+            document.body.appendChild(script);
+        }
+
+        // الدالة التي تستقبل البيانات وتحدث الواجهة
+        function handleResponse(data) {
+            document.getElementById('loader').style.display = 'none';
+            
+            if(data.error) {
+                alert("تنبيه: " + data.error);
+            } else {
+                document.getElementById('name').innerText = data.name || "غير مسجل";
+                document.getElementById('mId').innerText = data.membershipId || "00";
+                document.getElementById('car').innerText = (data.carName || "") + " (" + (data.plate || "") + ")";
+                document.getElementById('date').innerText = data.lastVisit || "لا يوجد";
+                document.getElementById('visits').innerText = data.visits || "0";
+                document.getElementById('level').innerText = data.level || "عادي";
+                document.getElementById('loyaltyCard').style.display = 'block';
+            }
         }
     </script>
 </body>

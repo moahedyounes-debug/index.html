@@ -16,7 +16,8 @@
         .row { display: flex; justify-content: space-between; margin: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
         .label { color: #aaa; font-size: 14px; }
         .val { font-weight: bold; font-size: 16px; }
-        #loader { display: none; color: var(--gold); margin-bottom: 10px; font-weight: bold; }
+        #loader { display: none; color: var(--gold); margin-bottom: 10px; font-weight: bold; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
     </style>
 </head>
 <body>
@@ -25,7 +26,7 @@
         <h2 style="border:none; margin:0;">رغوة الهجين</h2>
         <p>استعلم عن بطاقة العضوية برقم الجوال</p>
         <input type="tel" id="phoneInput" placeholder="05xxxxxxxx">
-        <div id="loader">جاري البحث في قاعدة البيانات...</div>
+        <div id="loader">جاري جلب البيانات...</div>
         <button id="searchBtn" onclick="fetchData()">استعراض البطاقة</button>
     </div>
 
@@ -41,33 +42,34 @@
     </div>
 
     <script>
-        // دالة جلب البيانات باستخدام JSONP لتخطي حظر الحماية
+        // دالة جلب البيانات باستخدام تقنية السكربت الخارجي لتخطي CORS
         function fetchData() {
             const phone = document.getElementById('phoneInput').value.trim();
-            const url = 'https://script.google.com/macros/s/AKfycbzndVlQeJFtce3GmMtQxnfm2IHiGo5cxHdHOeDrUWgeSnvCqAgaevQWPdrftR3Pd8WO/exec';
+            // الرابط الجديد الخاص بك
+            const url = 'https://script.google.com/macros/s/AKfycbwsyVQ69xzQLSQ2Jd96n8Gw2lIZRL772Q8DhXau7cjSFM0yOPAEmcp7z4CTMOTIHciq/exec';
             
-            if(!phone) return alert("يرجى إدخال رقم الجوال");
+            if(!phone) return alert("أدخل رقم الجوال");
 
             document.getElementById('loader').style.display = 'block';
             document.getElementById('loyaltyCard').style.display = 'none';
 
-            // حذف أي طلب قديم إذا وجد
-            const oldScript = document.getElementById('jsonp-request');
+            // تنظيف أي طلبات سابقة
+            const oldScript = document.getElementById('data-script');
             if (oldScript) oldScript.remove();
 
-            // إنشاء طلب جديد يتجاوز قيود المتصفح
+            // إنشاء عنصر سكربت جديد لجلب البيانات
             const script = document.createElement('script');
-            script.id = 'jsonp-request';
+            script.id = 'data-script';
+            // نرسل الطلب مع دالة 'handleResponse' ليعود الرد من جوجل ويقوم بتشغيلها فوراً
             script.src = `${url}?phone=${phone}&callback=handleResponse`;
             document.body.appendChild(script);
         }
 
-        // الدالة التي تستقبل البيانات وتحدث الواجهة
+        // هذه الدالة سيتم استدعاؤها تلقائياً بمجرد وصول البيانات من جوجل
         function handleResponse(data) {
             document.getElementById('loader').style.display = 'none';
-            
             if(data.error) {
-                alert("تنبيه: " + data.error);
+                alert(data.error);
             } else {
                 document.getElementById('name').innerText = data.name || "غير مسجل";
                 document.getElementById('mId').innerText = data.membershipId || "00";

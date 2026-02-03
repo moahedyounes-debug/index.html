@@ -16,6 +16,7 @@
         .row { display: flex; justify-content: space-between; margin: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 5px; }
         .label { color: #aaa; font-size: 14px; }
         .val { font-weight: bold; font-size: 16px; }
+        #loader { display: none; color: var(--gold); margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -24,6 +25,7 @@
         <h2 style="border:none; margin:0;">رغوة الهجين</h2>
         <p>استعلم عن بطاقة العضوية برقم الجوال</p>
         <input type="tel" id="phoneInput" placeholder="05xxxxxxxx">
+        <div id="loader">جاري جلب البيانات...</div>
         <button onclick="fetchData()">استعراض البطاقة</button>
     </div>
 
@@ -39,28 +41,37 @@
     </div>
 
     <script>
-        async function fetchData() {
+        function fetchData() {
             const phone = document.getElementById('phoneInput').value.trim();
-            const url = 'https://script.google.com/macros/s/AKfycbxfw_Q2rRdVcApNHVCD1ZMZ8tZ49zr555S0nQC6NQgisN_koiy5TjDF8YxjZZxxZlP7/exec';
+            // الرابط الجديد الذي قمت بإنشائه
+            const url = 'https://script.google.com/macros/s/AKfycbyZoiMSCCun1C1Oew9HElbCjEQgAGf2H9_QDjKRYjdDsaobqRUAVixjPsuwDnMstJoz/exec';
             
-            if(!phone) return alert("أدخل رقم الجوال");
+            if(!phone) return alert("الرجاء إدخال رقم الجوال أولاً");
             
-            try {
-                const response = await fetch(`${url}?phone=${phone}`);
-                const data = await response.json();
-                
-                if(data.error) {
-                    alert(data.error);
-                } else {
-                    document.getElementById('name').innerText = data.name;
-                    document.getElementById('mId').innerText = data.membershipId;
-                    document.getElementById('car').innerText = data.carName + " (" + data.plate + ")";
-                    document.getElementById('date').innerText = data.lastVisit;
-                    document.getElementById('visits').innerText = data.visits;
-                    document.getElementById('level').innerText = data.level;
-                    document.getElementById('loyaltyCard').style.display = 'block';
-                }
-            } catch(e) { alert("خطأ في الاتصال"); }
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('loyaltyCard').style.display = 'none';
+
+            fetch(`${url}?phone=${phone}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loader').style.display = 'none';
+                    if(data.error) {
+                        alert(data.error);
+                    } else {
+                        document.getElementById('name').innerText = data.name || "غير مسجل";
+                        document.getElementById('mId').innerText = data.membershipId || "00";
+                        document.getElementById('car').innerText = (data.carName || "") + " (" + (data.plate || "") + ")";
+                        document.getElementById('date').innerText = data.lastVisit || "لا يوجد";
+                        document.getElementById('visits').innerText = data.visits || "0";
+                        document.getElementById('level').innerText = data.level || "عادي";
+                        document.getElementById('loyaltyCard').style.display = 'block';
+                    }
+                })
+                .catch(e => {
+                    document.getElementById('loader').style.display = 'none';
+                    console.error(e);
+                    alert("خطأ في الاتصال بالنظام. تأكد من إعدادات النشر (Anyone) في Google Script.");
+                });
         }
     </script>
 </body>
